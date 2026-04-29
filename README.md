@@ -47,7 +47,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Open <http://localhost:3000>. Create an account at `/sign-up`, then you'll land on the protected `/app` page.
+Open <http://localhost:3000>. Create an account at `/sign-up`, then you'll land on the protected entries list at `/app/entries` — create, view, edit, and delete journal entries from there.
 
 ### Day-to-day commands
 
@@ -65,6 +65,13 @@ Open <http://localhost:3000>. Create an account at `/sign-up`, then you'll land 
 | `pnpm db:studio`  | Open Drizzle Studio in the browser    |
 
 CI runs `lint → typecheck → db:migrate → test → build` on every push and PR.
+
+## Entries (MS-3)
+
+- A signed-in user can create, list, view, edit, and delete journal entries from `/app/entries`.
+- Each entry has a title, a markdown body, and `createdAt`/`updatedAt` timestamps.
+- Every read and mutation in `src/lib/entries/dal.ts` is scoped by `userId`; cross-user reads return `null` and cross-user updates/deletes are no-ops. DAL integration tests cover this scoping plus FK cascade on user delete.
+- The schema is **ciphertext-ready**: `title` and `body` are opaque text columns with no full-text indexes or content constraints, so MS-5 can swap plaintext for ciphertext (and add `iv`/`algo` columns) without a backfill.
 
 ## Auth model (MS-2)
 
