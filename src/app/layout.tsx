@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mainspring",
+  title: "Mainichi",
   description: "A self-hostable, end-to-end encrypted journal.",
 };
 

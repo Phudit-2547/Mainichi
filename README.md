@@ -1,6 +1,8 @@
-# Mainspring
+# Mainichi
 
 A self-hostable journal app. End-to-end encrypted by design — server stores ciphertext, the user controls the key. Hosted flavor runs on Vercel; self-hosted flavor runs on Docker Compose on any Linux host.
+
+> Repo: [`Phudit-2547/Mainichi`](https://github.com/Phudit-2547/Mainichi) · Hosted preview: <https://mainichi-theta.vercel.app>
 
 This is the skeleton repo. App code is being filled in over MS-1..MS-7 of the roadmap (see the project tracker).
 
@@ -27,8 +29,8 @@ nvm install                   # uses .nvmrc
 corepack enable && corepack prepare pnpm@10 --activate
 
 # 2. Clone and install
-git clone <repo-url> mainspring
-cd mainspring
+git clone git@github.com:Phudit-2547/Mainichi.git
+cd Mainichi
 pnpm install
 
 # 3. Run the dev server
@@ -53,7 +55,7 @@ CI runs all of `lint → typecheck → test → build` on every push and PR.
 
 ## Self-hosting
 
-Mainspring is built so a single user can run it on their own server. The full Docker Compose flow ships in MS-7. Until then, this section is a placeholder.
+Mainichi is built so a single user can run it on their own server. The full Docker Compose flow ships in MS-7. Until then, this section is a placeholder.
 
 What you'll need (preview):
 
