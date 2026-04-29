@@ -1,0 +1,22 @@
+# Local Postgres for development. Self-host packaging lives in MS-7.
+# Run: docker compose -f docker-compose.dev.yml up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mainichi-dev-postgres
+    environment:
+      POSTGRES_DB: mainichi
+      POSTGRES_USER: mainichi
+      POSTGRES_PASSWORD: mainichi
+    ports:
+      - "5432:5432"
+    volumes:
+      - mainichi_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mainichi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mainichi_pgdata:

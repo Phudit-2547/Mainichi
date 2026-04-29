@@ -13,9 +13,9 @@ This is the skeleton repo. App code is being filled in over MS-1..MS-7 of the ro
 - **Package manager:** pnpm 10 (Node.js 22 LTS)
 - **Tests:** Vitest
 - **Lint:** ESLint via `eslint-config-next`
-- **Persistence (planned):** Postgres via Drizzle ORM. Hosted: Neon (Vercel Marketplace). Self-host: bring your own Postgres.
-- **Auth (planned):** Auth.js (NextAuth v5) with email + passkeys.
-- **Crypto (v1 design constraint):** Argon2id key derivation + AES-256-GCM. Server never sees plaintext entries.
+- **Persistence:** Postgres via [Drizzle ORM](https://orm.drizzle.team). Hosted: Neon (Vercel Marketplace). Self-host: bring your own Postgres.
+- **Auth:** in-repo email + password with Argon2id hashing, [`jose`](https://github.com/panva/jose)-signed session JWT, DB-backed session table.
+- **Crypto (v1 design constraint):** Argon2id key derivation + AES-256-GCM. Server never sees plaintext entries. Per-user `kdf_salt` is seeded at sign-up so MS-5 can derive the E2E master key with no backfill migration.
 
 See the MS-0 tech spec for the full rationale and threat model.
 
@@ -33,11 +33,21 @@ git clone git@github.com:Phudit-2547/Mainichi.git
 cd Mainichi
 pnpm install
 
-# 3. Run the dev server
+# 3. Configure environment
+cp .env.example .env.local
+# Fill in AUTH_SECRET (run: openssl rand -hex 32)
+
+# 4. Start Postgres (uses docker-compose.dev.yml)
+docker compose -f docker-compose.dev.yml up -d
+
+# 5. Apply migrations
+pnpm db:migrate
+
+# 6. Run the dev server
 pnpm dev
 ```
 
-Open <http://localhost:3000>.
+Open <http://localhost:3000>. Create an account at `/sign-up`, then you'll land on the protected `/app` page.
 
 ### Day-to-day commands
 
@@ -50,25 +60,46 @@ Open <http://localhost:3000>.
 | `pnpm typecheck`  | `tsc --noEmit`                        |
 | `pnpm test`       | Run Vitest suite once                 |
 | `pnpm test:watch` | Run Vitest in watch mode              |
+| `pnpm db:generate`| Generate a new Drizzle migration      |
+| `pnpm db:migrate` | Apply pending migrations              |
+| `pnpm db:studio`  | Open Drizzle Studio in the browser    |
 
-CI runs all of `lint → typecheck → test → build` on every push and PR.
+CI runs `lint → typecheck → db:migrate → test → build` on every push and PR.
+
+## Auth model (MS-2)
+
+- Email + password. Argon2id (via `hash-wasm`, OWASP 2023 params) for password hashes.
+- Database-backed sessions: a row in `sessions` is created on sign-in; the cookie carries an HMAC-signed (`HS256`) JWT containing the session id. Revocation = delete the row.
+- The `mainichi_session` cookie is `httpOnly`, `sameSite=lax`, and `secure` in production. 30-day sliding TTL.
+- `src/proxy.ts` performs an optimistic check on `/app/*` (verifies the JWT signature only, no DB hit) so prefetched navigations don't flash the page.
+- `src/app/app/layout.tsx` is the authoritative chokepoint: it calls `verifySession()` from the data-access layer (`src/lib/auth/dal.ts`), which redirects to `/sign-in` if the DB has no matching live session.
+- Server Actions in `src/lib/auth/actions.ts` handle sign-up, sign-in, and sign-out.
+
+### Threat model notes
+
+Until a SecurityEngineer is hired, these assumptions are documented inline:
+
+- No rate limiting on credential endpoints in v1. Acceptable for single-tenant self-host. Re-evaluate before public hosted launch.
+- No password-reset flow yet. Ships with the E2E key-rewrap design in MS-5.
+- No MFA, no OAuth, no magic link in v1. Adds in later milestones.
+- Sign-in path runs `verifyPassword` against a fixed dummy hash on missing-user lookups to defeat user-enumeration via timing.
 
 ## Self-hosting
 
-Mainichi is built so a single user can run it on their own server. The full Docker Compose flow ships in MS-7. Until then, this section is a placeholder.
+Mainichi is built so a single user can run it on their own server. The full Docker Compose flow ships in MS-7. Until then, see [`docs/selfhost.md`](./docs/selfhost.md) for the auth-side requirements.
 
 What you'll need (preview):
 
 - A Linux host with Docker + Docker Compose
 - A Postgres database (managed or self-managed)
-- An SMTP relay or Resend API key for transactional email
+- An SMTP relay or Resend API key for transactional email (only when MS-5 ships password reset)
 - A domain with TLS (we'll document Caddy + Let's Encrypt)
 
 No paid-service credentials are baked into the self-host image; everything is configured via environment variables at install time.
 
 ## Deployment (hosted)
 
-Production runs on Vercel; preview deploys go up automatically per-PR. Domain and Vercel project linking are tracked in MS-1 follow-ups.
+Production runs on Vercel; preview deploys go up automatically per-PR. Set `AUTH_SECRET` and `DATABASE_URL` (Neon) in the Vercel project's environment variables.
 
 ## License
 
