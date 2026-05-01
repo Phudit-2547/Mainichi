@@ -91,6 +91,18 @@ Until a SecurityEngineer is hired, these assumptions are documented inline:
 - No MFA, no OAuth, no magic link in v1. Adds in later milestones.
 - Sign-in path runs `verifyPassword` against a fixed dummy hash on missing-user lookups to defeat user-enumeration via timing.
 
+## Mobile support (MS-6)
+
+The UI is designed mobile-first and tested on narrow viewports (iPhone SE through iPhone 16 Pro Max, Pixel 7).
+
+- **Touch targets:** all buttons and interactive rows are `min-h-11` (44 px), meeting WCAG 2.5.5.
+- **No iOS auto-zoom:** inputs render at `text-base` (16 px) on narrow viewports so Safari doesn't zoom on focus.
+- **Safe-area insets:** bottom padding accounts for the Home Indicator on notched iPhones and the gesture bar on Android.
+- **Viewport:** `viewport-fit=cover` extends into notch/Dynamic Island areas; `min-h-dvh` tracks the dynamic viewport height (collapses with the address bar).
+- **Sticky header:** backdrop-blur glassmorphism header stays visible while scrolling.
+- **Stacked layout:** entry list items and action buttons stack vertically on mobile and switch to horizontal at `sm:` (640 px).
+- **No horizontal overflow:** `overflow-x: hidden` on the html element prevents stray side-scroll.
+
 ## Self-hosting in 5 minutes
 
 Mainichi is built so a single user can run it on their own server. No paid services required.
