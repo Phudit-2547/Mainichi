@@ -9,13 +9,13 @@ export default async function EntriesIndexPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
           Entries
         </h1>
         <Link
           href="/app/entries/new"
-          className="rounded-md bg-zinc-950 px-3 py-1.5 text-sm font-medium text-zinc-50 shadow-sm transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+          className="inline-flex min-h-11 items-center justify-center rounded-md bg-zinc-950 px-4 text-sm font-medium text-zinc-50 shadow-sm transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
         >
           New entry
         </Link>
@@ -40,9 +40,9 @@ export default async function EntriesIndexPage() {
             <li key={entry.id}>
               <Link
                 href={`/app/entries/${entry.id}`}
-                className="flex items-baseline justify-between gap-4 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                className="flex min-h-14 flex-col gap-1 px-4 py-3 hover:bg-zinc-50 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 dark:hover:bg-zinc-900"
               >
-                <span className="truncate text-sm font-medium text-zinc-950 dark:text-zinc-50">
+                <span className="break-words text-sm font-medium text-zinc-950 sm:truncate dark:text-zinc-50">
                   {entry.title}
                 </span>
                 <time

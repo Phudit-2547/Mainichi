@@ -48,7 +48,7 @@ export function EntryForm({ action, submitLabel, initial, cancelHref }: Props) {
           maxLength={200}
           autoComplete="off"
           defaultValue={state?.values?.title ?? initial?.title ?? ""}
-          className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-950 outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="block min-h-11 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-950 outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950 sm:text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
         />
         {state?.errors?.title && (
           <p className="text-xs text-red-700 dark:text-red-300">
@@ -70,10 +70,10 @@ export function EntryForm({ action, submitLabel, initial, cancelHref }: Props) {
         <textarea
           id="body"
           name="body"
-          rows={14}
+          rows={10}
           maxLength={100_000}
           defaultValue={state?.values?.body ?? initial?.body ?? ""}
-          className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm leading-relaxed text-zinc-950 outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="block min-h-[60vh] w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-base leading-relaxed text-zinc-950 outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950 sm:min-h-[20rem] sm:text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
         />
         {state?.errors?.body && (
           <p className="text-xs text-red-700 dark:text-red-300">
@@ -82,17 +82,17 @@ export function EntryForm({ action, submitLabel, initial, cancelHref }: Props) {
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-zinc-950 px-3 py-2 text-sm font-medium text-zinc-50 shadow-sm transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+          className="inline-flex min-h-11 items-center justify-center rounded-md bg-zinc-950 px-4 text-sm font-medium text-zinc-50 shadow-sm transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
         >
           {pending ? "Saving…" : submitLabel}
         </button>
         <Link
           href={cancelHref}
-          className="text-sm font-medium text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-400"
+          className="-m-2 inline-flex min-h-11 items-center p-2 text-sm font-medium text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-400"
         >
           Cancel
         </Link>
