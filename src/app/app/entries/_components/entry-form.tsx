@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useCrypto } from "@/lib/crypto/context";
 import type { EntryFormState } from "@/lib/entries/schemas";
 
 type EntryAction = (
@@ -12,6 +13,7 @@ type EntryAction = (
 type Props = {
   action: EntryAction;
   submitLabel: string;
+  /** Ciphertext (or plaintext for legacy enc_v=0 entries) from the server */
   initial?: { title?: string; body?: string };
   cancelHref: string;
 };
@@ -21,9 +23,61 @@ export function EntryForm({ action, submitLabel, initial, cancelHref }: Props) {
     action,
     undefined,
   );
+  const { encryptText, decryptText } = useCrypto();
+  const [, startTransition] = useTransition();
+
+  // Decrypted initial values for edit mode
+  const [decrypted, setDecrypted] = useState<{ title: string; body: string } | null>(
+    initial ? null : { title: "", body: "" },
+  );
+
+  useEffect(() => {
+    if (!initial) return;
+    Promise.all([
+      decryptText(initial.title ?? ""),
+      decryptText(initial.body ?? ""),
+    ]).then(([title, body]) => setDecrypted({ title, body }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const title = (form.elements.namedItem("title") as HTMLInputElement).value;
+    const body = (form.elements.namedItem("body") as HTMLTextAreaElement).value;
+
+    let encTitle: string;
+    let encBody: string;
+    try {
+      [encTitle, encBody] = await Promise.all([
+        encryptText(title),
+        encryptText(body),
+      ]);
+    } catch {
+      // encryptText throws if key is locked; CryptoGuard will handle re-unlock
+      return;
+    }
+
+    const encryptedData = new FormData();
+    encryptedData.set("title", encTitle);
+    encryptedData.set("body", encBody);
+
+    startTransition(() => {
+      formAction(encryptedData);
+    });
+  };
+
+  if (initial && !decrypted) {
+    return (
+      <div className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        Decrypting…
+      </div>
+    );
+  }
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
       {state?.errors?.form && (
         <p
           role="alert"
@@ -47,7 +101,8 @@ export function EntryForm({ action, submitLabel, initial, cancelHref }: Props) {
           required
           maxLength={200}
           autoComplete="off"
-          defaultValue={state?.values?.title ?? initial?.title ?? ""}
+          defaultValue={state?.values?.title ?? decrypted?.title ?? ""}
+          key={decrypted?.title}
           className="block min-h-11 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-950 outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950 sm:text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
         />
         {state?.errors?.title && (
@@ -72,7 +127,8 @@ export function EntryForm({ action, submitLabel, initial, cancelHref }: Props) {
           name="body"
           rows={10}
           maxLength={100_000}
-          defaultValue={state?.values?.body ?? initial?.body ?? ""}
+          defaultValue={state?.values?.body ?? decrypted?.body ?? ""}
+          key={decrypted?.body}
           className="block min-h-[60vh] w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-base leading-relaxed text-zinc-950 outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950 sm:min-h-[20rem] sm:text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
         />
         {state?.errors?.body && (

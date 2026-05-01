@@ -40,11 +40,11 @@ export async function getEntry(
 
 export async function createEntry(
   userId: string,
-  input: { title: string; body: string },
+  input: { title: string; body: string; encV?: number },
 ): Promise<Entry> {
   const [row] = await db()
     .insert(entries)
-    .values({ userId, title: input.title, body: input.body })
+    .values({ userId, title: input.title, body: input.body, encV: input.encV ?? 1 })
     .returning();
   if (!row) throw new Error("failed to insert entry");
   return row;
@@ -53,13 +53,14 @@ export async function createEntry(
 export async function updateEntry(
   userId: string,
   entryId: string,
-  input: { title: string; body: string },
+  input: { title: string; body: string; encV?: number },
 ): Promise<Entry | null> {
   const [row] = await db()
     .update(entries)
     .set({
       title: input.title,
       body: input.body,
+      encV: input.encV ?? 1,
       updatedAt: new Date(),
     })
     .where(and(eq(entries.id, entryId), eq(entries.userId, userId)))

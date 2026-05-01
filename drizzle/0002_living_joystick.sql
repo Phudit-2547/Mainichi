@@ -1,0 +1,1 @@
+ALTER TABLE "entries" ADD COLUMN "enc_v" smallint DEFAULT 0 NOT NULL;

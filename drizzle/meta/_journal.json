@@ -15,6 +15,13 @@
       "when": 1777474629747,
       "tag": "0001_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777601673137,
+      "tag": "0002_living_joystick",
+      "breakpoints": true
     }
   ]
 }

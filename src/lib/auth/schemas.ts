@@ -16,7 +16,13 @@ export const SignInSchema = z.object({
 export type SignUpInput = z.infer<typeof SignUpSchema>;
 export type SignInInput = z.infer<typeof SignInSchema>;
 
-export type AuthFormState = {
-  errors?: { email?: string[]; password?: string[]; form?: string[] };
-  values?: { email?: string };
-} | undefined;
+export type AuthFormState =
+  | {
+      errors?: { email?: string[]; password?: string[]; form?: string[] };
+      values?: { email?: string };
+      // Present on successful auth; client uses this to derive the E2E key.
+      // kdfSalt is not secret (it is a random per-user salt, not the key itself).
+      kdfSalt?: string;
+      redirectTo?: string;
+    }
+  | undefined;

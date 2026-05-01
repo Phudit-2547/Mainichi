@@ -1,10 +1,9 @@
-import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { index, pgTable, smallint, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
-// MS-3 stores plaintext markdown; MS-5 will swap title/body to ciphertext
-// (base64 in-place or bytea + iv/algo columns added in a follow-up migration).
-// Schema is ciphertext-ready: no full-text indexes on user content, no DB-side
-// content constraints, ownership FK independent of column shape.
+// title and body store either plaintext (enc_v=0, legacy) or AES-256-GCM
+// ciphertext in the format `v1:<base64url-iv>:<base64url-ct>` (enc_v=1).
+// The server never decrypts these columns; all decryption is client-side.
 export const entries = pgTable(
   "entries",
   {
@@ -16,6 +15,8 @@ export const entries = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     body: text("body").notNull(),
+    // 0 = plaintext (pre-MS-5), 1 = AES-256-GCM via PBKDF2-SHA-256
+    encV: smallint("enc_v").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

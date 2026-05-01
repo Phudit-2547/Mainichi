@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useRef } from "react";
+import { useCrypto } from "@/lib/crypto/context";
 import type { AuthFormState } from "@/lib/auth/schemas";
 
 type AuthAction = (
@@ -41,9 +43,35 @@ export function AuthForm({ mode, action }: Props) {
     undefined,
   );
   const copy = COPY[mode];
+  const router = useRouter();
+  const { unlock } = useCrypto();
+
+  // Capture password before FormData is consumed by the server action.
+  // Cleared after key derivation; never stored in React state.
+  const passwordRef = useRef("");
+
+  // When the server action returns kdfSalt, derive the key and navigate.
+  useEffect(() => {
+    if (state?.kdfSalt && state.redirectTo && passwordRef.current) {
+      const password = passwordRef.current;
+      passwordRef.current = "";
+      unlock(password, state.kdfSalt)
+        .then(() => router.push(state.redirectTo!))
+        .catch(() => {
+          // If key derivation fails unexpectedly, still navigate — the
+          // CryptoGuard overlay will prompt for password again.
+          router.push(state.redirectTo!);
+        });
+    }
+  }, [state?.kdfSalt, state?.redirectTo, unlock, router]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const pwEl = e.currentTarget.elements.namedItem("password") as HTMLInputElement | null;
+    if (pwEl) passwordRef.current = pwEl.value;
+  };
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
           {copy.title}

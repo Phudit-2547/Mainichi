@@ -21,6 +21,14 @@ import {
 const DUMMY_HASH =
   "$argon2id$v=19$m=19456,t=2,p=1$YWFhYWFhYWFhYWFhYWFhYQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG";
 
+function kdfSaltToBase64url(salt: Buffer): string {
+  return salt
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
 export async function signUpAction(
   _state: AuthFormState,
   formData: FormData,
@@ -66,7 +74,9 @@ export async function signUpAction(
   }
 
   await createSession(created.id);
-  redirect("/app");
+  // Return kdfSalt so the client can derive the E2E key immediately,
+  // avoiding a second password prompt. The client navigates to redirectTo.
+  return { kdfSalt: kdfSaltToBase64url(kdfSalt), redirectTo: "/app" };
 }
 
 export async function signInAction(
@@ -88,7 +98,7 @@ export async function signInAction(
   const { email, password } = parsed.data;
 
   const [user] = await db()
-    .select({ id: users.id, passwordHash: users.passwordHash })
+    .select({ id: users.id, passwordHash: users.passwordHash, kdfSalt: users.kdfSalt })
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
@@ -106,7 +116,8 @@ export async function signInAction(
   }
 
   await createSession(user.id);
-  redirect("/app");
+  // Return kdfSalt so the client can derive the E2E key immediately.
+  return { kdfSalt: kdfSaltToBase64url(user.kdfSalt as Buffer), redirectTo: "/app" };
 }
 
 export async function signOutAction(): Promise<void> {

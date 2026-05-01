@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CryptoGuard } from "@/lib/crypto/context";
 import { signOutAction } from "@/lib/auth/actions";
 import { getCurrentUser, verifySession } from "@/lib/auth/dal";
 import { APP_NAME } from "@/lib/version";
@@ -39,7 +40,7 @@ export default async function AppLayout({
         </div>
       </header>
       <main className="mx-auto max-w-2xl px-4 py-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:px-6 sm:py-10">
-        {children}
+        <CryptoGuard>{children}</CryptoGuard>
       </main>
     </div>
   );
