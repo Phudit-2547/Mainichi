@@ -47,36 +47,41 @@ export async function signUpAction(
 
   const { email, password } = parsed.data;
 
-  const existing = await db()
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
-  if (existing.length > 0) {
+  try {
+    const existing = await db()
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+    if (existing.length > 0) {
+      return {
+        errors: { form: ["An account with this email already exists."] },
+        values: { email },
+      };
+    }
+
+    const passwordHash = await hashPassword(password);
+    const kdfSalt = generateKdfSalt();
+
+    const [created] = await db()
+      .insert(users)
+      .values({ email, passwordHash, kdfSalt })
+      .returning({ id: users.id });
+    if (!created) {
+      return {
+        errors: { form: ["Could not create account. Please try again."] },
+        values: { email },
+      };
+    }
+
+    await createSession(created.id);
+    return { kdfSalt: kdfSaltToBase64url(kdfSalt), redirectTo: "/app" };
+  } catch {
     return {
-      errors: { form: ["An account with this email already exists."] },
+      errors: { form: ["The server is not configured yet. Please check that DATABASE_URL and AUTH_SECRET are set."] },
       values: { email },
     };
   }
-
-  const passwordHash = await hashPassword(password);
-  const kdfSalt = generateKdfSalt();
-
-  const [created] = await db()
-    .insert(users)
-    .values({ email, passwordHash, kdfSalt })
-    .returning({ id: users.id });
-  if (!created) {
-    return {
-      errors: { form: ["Could not create account. Please try again."] },
-      values: { email },
-    };
-  }
-
-  await createSession(created.id);
-  // Return kdfSalt so the client can derive the E2E key immediately,
-  // avoiding a second password prompt. The client navigates to redirectTo.
-  return { kdfSalt: kdfSaltToBase64url(kdfSalt), redirectTo: "/app" };
 }
 
 export async function signInAction(
@@ -97,27 +102,32 @@ export async function signInAction(
 
   const { email, password } = parsed.data;
 
-  const [user] = await db()
-    .select({ id: users.id, passwordHash: users.passwordHash, kdfSalt: users.kdfSalt })
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
+  try {
+    const [user] = await db()
+      .select({ id: users.id, passwordHash: users.passwordHash, kdfSalt: users.kdfSalt })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
 
-  // Constant-time-ish: always run verifyPassword, even when user is missing.
-  const ok = user
-    ? await verifyPassword(password, user.passwordHash)
-    : (await verifyPassword(password, DUMMY_HASH), false);
+    const ok = user
+      ? await verifyPassword(password, user.passwordHash)
+      : (await verifyPassword(password, DUMMY_HASH), false);
 
-  if (!user || !ok) {
+    if (!user || !ok) {
+      return {
+        errors: { form: ["Email or password is incorrect."] },
+        values: { email },
+      };
+    }
+
+    await createSession(user.id);
+    return { kdfSalt: kdfSaltToBase64url(user.kdfSalt as Buffer), redirectTo: "/app" };
+  } catch {
     return {
-      errors: { form: ["Email or password is incorrect."] },
+      errors: { form: ["The server is not configured yet. Please check that DATABASE_URL and AUTH_SECRET are set."] },
       values: { email },
     };
   }
-
-  await createSession(user.id);
-  // Return kdfSalt so the client can derive the E2E key immediately.
-  return { kdfSalt: kdfSaltToBase64url(user.kdfSalt as Buffer), redirectTo: "/app" };
 }
 
 export async function signOutAction(): Promise<void> {
