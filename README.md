@@ -91,18 +91,22 @@ Until a SecurityEngineer is hired, these assumptions are documented inline:
 - No MFA, no OAuth, no magic link in v1. Adds in later milestones.
 - Sign-in path runs `verifyPassword` against a fixed dummy hash on missing-user lookups to defeat user-enumeration via timing.
 
-## Self-hosting
+## Self-hosting in 5 minutes
 
-Mainichi is built so a single user can run it on their own server. The full Docker Compose flow ships in MS-7. Until then, see [`docs/selfhost.md`](./docs/selfhost.md) for the auth-side requirements.
+Mainichi is built so a single user can run it on their own server. No paid services required.
 
-What you'll need (preview):
+```bash
+git clone https://github.com/Phudit-2547/Mainichi.git
+cd Mainichi
+echo "AUTH_SECRET=$(openssl rand -hex 32)" > .env
+docker compose up -d
+```
 
-- A Linux host with Docker + Docker Compose
-- A Postgres database (managed or self-managed)
-- An SMTP relay or Resend API key for transactional email (only when MS-5 ships password reset)
-- A domain with TLS (we'll document Caddy + Let's Encrypt)
+Open <http://localhost:3000>. Sign up, write an entry. Done.
 
-No paid-service credentials are baked into the self-host image; everything is configured via environment variables at install time.
+The bundled `docker-compose.yml` runs the app and Postgres together. Migrations apply automatically on startup. For production use, put a reverse proxy (Caddy, nginx) in front for TLS.
+
+See [`docs/selfhost.md`](./docs/selfhost.md) for external database setup, updates, backups, and detailed configuration.
 
 ## Deployment (hosted)
 
