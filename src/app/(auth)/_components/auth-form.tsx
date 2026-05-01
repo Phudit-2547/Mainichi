@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useRef } from "react";
 import { useCrypto } from "@/lib/crypto/context";
 import type { AuthFormState } from "@/lib/auth/schemas";
@@ -38,6 +38,10 @@ const COPY = {
 } as const;
 
 export function AuthForm({ mode, action }: Props) {
+  const search = useSearchParams();
+  // Surface the success notice after a completed password reset.
+  const resetOk = mode === "sign-in" && search.get("reset") === "ok";
+
   const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
     action,
     undefined,
@@ -77,6 +81,15 @@ export function AuthForm({ mode, action }: Props) {
           {copy.title}
         </h1>
       </div>
+
+      {resetOk && !state?.errors?.form && (
+        <p
+          role="status"
+          className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
+        >
+          Password reset complete. Sign in with your new password.
+        </p>
+      )}
 
       {state?.errors?.form && (
         <p
@@ -138,6 +151,16 @@ export function AuthForm({ mode, action }: Props) {
         {state?.errors?.password && (
           <p className="text-xs text-red-700 dark:text-red-300">
             {state.errors.password.join(" ")}
+          </p>
+        )}
+        {mode === "sign-in" && (
+          <p className="pt-1 text-right">
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300"
+            >
+              Forgot password?
+            </Link>
           </p>
         )}
       </div>

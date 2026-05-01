@@ -120,9 +120,23 @@ The bundled `docker-compose.yml` runs the app and Postgres together. Migrations 
 
 See [`docs/selfhost.md`](./docs/selfhost.md) for external database setup, updates, backups, and detailed configuration.
 
+## Email (password reset)
+
+Password reset is opt-in via the `EMAIL_PROVIDER` env var:
+
+| Value | When to use | Required env |
+|---|---|---|
+| `log` (default) | Local dev — prints the email to stdout so you can click the link | none |
+| `resend` | Hosted on Vercel — managed delivery via [Resend](https://resend.com) | `RESEND_API_KEY`, `EMAIL_FROM` |
+| `smtp` | Self-host — any SMTP relay (Postmark, SES, Fastmail, mailpit) | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` |
+
+Set `APP_URL` (e.g. `https://journal.example.com`) so reset links point at your install. On Vercel preview deploys this falls back to `VERCEL_URL` automatically.
+
+> ⚠️ **Resetting your password permanently deletes your encrypted journal entries.** Mainichi derives the key that decrypts your entries from your password (E2E encryption — the server never sees the key). A reset means we cannot decrypt your old entries, so they are removed during the reset. A future release ([MAI-32](https://github.com/Phudit-2547/Mainichi/issues)) will add an opt-in recovery key so you can reset without losing data.
+
 ## Deployment (hosted)
 
-Production runs on Vercel; preview deploys go up automatically per-PR. Set `AUTH_SECRET` and `DATABASE_URL` (Neon) in the Vercel project's environment variables.
+Production runs on Vercel; preview deploys go up automatically per-PR. Set `AUTH_SECRET`, `DATABASE_URL` (Neon), and the email vars (`EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM`, `APP_URL`) in the Vercel project's environment variables.
 
 ## License
 
