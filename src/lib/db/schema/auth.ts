@@ -1,4 +1,4 @@
-import { customType, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { customType, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 const bytea = customType<{ data: Buffer; default: false }>({
   dataType() {
@@ -34,6 +34,33 @@ export const sessions = pgTable("sessions", {
     .defaultNow(),
 });
 
+// Single-use password-reset tokens. The raw token is emailed to the user;
+// the DB only ever stores its sha-256 hash so a DB read is not enough to
+// hijack a reset link.
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("password_reset_tokens_token_hash_idx").on(t.tokenHash),
+    index("password_reset_tokens_user_id_idx").on(t.userId),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;
