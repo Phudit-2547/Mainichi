@@ -11,6 +11,7 @@ type Props = { entries: EntrySummary[] };
 type DecryptedSummary = {
   id: string;
   title: string;
+  journalDate: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -21,9 +22,11 @@ export function EntriesList({ entries }: Props) {
 
   useEffect(() => {
     Promise.all(
-      entries.map(async (e) => ({
-        ...e,
-        title: await decryptText(e.title),
+      entries.map(async (entry) => ({
+        ...entry,
+        title: entry.journalDate
+          ? entry.journalDate
+          : await decryptText(entry.title),
       })),
     ).then(setDecrypted);
   }, [entries, decryptText]);
@@ -32,12 +35,12 @@ export function EntriesList({ entries }: Props) {
     return (
       <div className="rounded-md border border-dashed border-zinc-300 bg-white px-6 py-10 text-center dark:border-zinc-800 dark:bg-zinc-950">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          No entries yet. Start your journal with{" "}
+          No entries yet. Start with{" "}
           <Link
-            href="/app/entries/new"
+            href="/app/today"
             className="font-medium text-zinc-950 underline underline-offset-4 dark:text-zinc-50"
           >
-            your first entry
+            today’s journal
           </Link>
           .
         </p>
@@ -45,28 +48,44 @@ export function EntriesList({ entries }: Props) {
     );
   }
 
-  const rows = decrypted ?? entries.map((e) => ({ ...e, title: "•••" }));
+  const rows = decrypted ??
+    entries.map((entry) => ({
+      ...entry,
+      title: entry.journalDate ?? "•••",
+    }));
 
   return (
     <ul className="divide-y divide-zinc-200 overflow-hidden rounded-md border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-950">
-      {rows.map((entry) => (
-        <li key={entry.id}>
-          <Link
-            href={`/app/entries/${entry.id}`}
-            className="flex min-h-14 flex-col gap-1 px-4 py-3 hover:bg-zinc-50 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 dark:hover:bg-zinc-900"
-          >
-            <span className="break-words text-sm font-medium text-zinc-950 sm:truncate dark:text-zinc-50">
-              {entry.title}
-            </span>
-            <time
-              dateTime={entry.createdAt.toISOString()}
-              className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400"
+      {rows.map((entry) => {
+        const href = entry.journalDate
+          ? `/app/journal/${entry.journalDate}`
+          : `/app/entries/${entry.id}`;
+        return (
+          <li key={entry.id}>
+            <Link
+              href={href}
+              className="flex min-h-14 flex-col gap-1 px-4 py-3 hover:bg-zinc-50 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 dark:hover:bg-zinc-900"
             >
-              {formatDateTime(entry.createdAt)}
-            </time>
-          </Link>
-        </li>
-      ))}
+              <span className="min-w-0">
+                <span className="block break-words text-sm font-medium text-zinc-950 sm:truncate dark:text-zinc-50">
+                  {entry.title}
+                </span>
+                {entry.journalDate && (
+                  <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+                    Daily journal
+                  </span>
+                )}
+              </span>
+              <time
+                dateTime={entry.updatedAt.toISOString()}
+                className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400"
+              >
+                {formatDateTime(entry.updatedAt)}
+              </time>
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }

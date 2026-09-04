@@ -18,13 +18,29 @@ export default async function AppLayout({
     <div className="min-h-dvh bg-zinc-50 dark:bg-black">
       <header className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50/90 backdrop-blur supports-[backdrop-filter]:bg-zinc-50/80 dark:border-zinc-800 dark:bg-black/90 dark:supports-[backdrop-filter]:bg-black/80">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <Link
-            href="/app/entries"
-            className="-m-2 inline-flex min-h-11 items-center p-2 text-sm font-semibold tracking-tight text-zinc-950 dark:text-zinc-50"
-          >
-            {APP_NAME}
-          </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-3">
+            <Link
+              href="/app/today"
+              className="-m-2 inline-flex min-h-11 shrink-0 items-center p-2 text-sm font-semibold tracking-tight text-zinc-950 dark:text-zinc-50"
+            >
+              {APP_NAME}
+            </Link>
+            <nav aria-label="Journal" className="flex items-center">
+              <Link
+                href="/app/today"
+                className="inline-flex min-h-11 items-center px-2 text-sm text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+              >
+                Today
+              </Link>
+              <Link
+                href="/app/entries"
+                className="inline-flex min-h-11 items-center px-2 text-sm text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+              >
+                Entries
+              </Link>
+            </nav>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <span className="hidden max-w-[16ch] truncate text-xs text-zinc-500 sm:inline dark:text-zinc-400">
               {user.email}
             </span>

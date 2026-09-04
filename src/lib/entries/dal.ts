@@ -1,11 +1,11 @@
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { entries, type Entry } from "@/lib/db/schema";
 
 export type EntrySummary = Pick<
   Entry,
-  "id" | "title" | "createdAt" | "updatedAt"
+  "id" | "title" | "journalDate" | "createdAt" | "updatedAt"
 >;
 
 // Every read and mutation is scoped by `userId`. Callers must pass the
@@ -18,6 +18,7 @@ export async function listEntries(userId: string): Promise<EntrySummary[]> {
     .select({
       id: entries.id,
       title: entries.title,
+      journalDate: entries.journalDate,
       createdAt: entries.createdAt,
       updatedAt: entries.updatedAt,
     })
@@ -61,9 +62,16 @@ export async function updateEntry(
       title: input.title,
       body: input.body,
       encV: input.encV ?? 1,
+      revision: sql<number>`${entries.revision} + 1`,
       updatedAt: new Date(),
     })
-    .where(and(eq(entries.id, entryId), eq(entries.userId, userId)))
+    .where(
+      and(
+        eq(entries.id, entryId),
+        eq(entries.userId, userId),
+        isNull(entries.journalDate),
+      ),
+    )
     .returning();
   return row ?? null;
 }
@@ -74,7 +82,13 @@ export async function deleteEntry(
 ): Promise<boolean> {
   const rows = await db()
     .delete(entries)
-    .where(and(eq(entries.id, entryId), eq(entries.userId, userId)))
+    .where(
+      and(
+        eq(entries.id, entryId),
+        eq(entries.userId, userId),
+        isNull(entries.journalDate),
+      ),
+    )
     .returning({ id: entries.id });
   return rows.length > 0;
 }
