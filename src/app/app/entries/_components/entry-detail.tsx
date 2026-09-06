@@ -19,8 +19,11 @@ export function EntryDetail({ entry }: Props) {
     );
   }, [entry.id, decryptText]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const title = decrypted?.title ?? "•••";
+  const title = entry.journalDate ?? decrypted?.title ?? "•••";
   const body = decrypted?.body ?? "";
+  const editHref = entry.journalDate
+    ? `/app/journal/${entry.journalDate}`
+    : `/app/entries/${entry.id}/edit`;
 
   return (
     <article className="space-y-6">
@@ -40,10 +43,10 @@ export function EntryDetail({ entry }: Props) {
         </h1>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link
-            href={`/app/entries/${entry.id}/edit`}
+            href={editHref}
             className="inline-flex min-h-11 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
           >
-            Edit
+            {entry.journalDate ? "Open daily editor" : "Edit"}
           </Link>
           <form action={deleteEntryAction}>
             <input type="hidden" name="entryId" value={entry.id} />

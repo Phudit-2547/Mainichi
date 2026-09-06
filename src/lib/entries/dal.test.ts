@@ -9,6 +9,7 @@ import {
   listEntries,
   updateEntry,
 } from "./dal";
+import { createJournalEntry } from "@/lib/journal/dal";
 
 // Integration test: requires DATABASE_URL with migrations applied. CI provides
 // this; locally `docker compose -f docker-compose.dev.yml up -d` + `pnpm
@@ -92,6 +93,36 @@ describe.skipIf(!dbAvailable)("entries DAL", () => {
     const stillOriginal = await getEntry(alice, created.id);
     expect(stillOriginal?.title).toBe("Original");
     expect(stillOriginal?.body).toBe("");
+  });
+
+  it("generic update refuses daily-journal entries", async () => {
+    const created = await createJournalEntry(alice, {
+      journalDate: "2026-09-04",
+      title: "encrypted-title",
+      body: "encrypted-body",
+    });
+
+    const result = await updateEntry(alice, created.id, {
+      title: "legacy-editor-title",
+      body: "legacy-editor-body",
+    });
+    expect(result).toBeNull();
+
+    const unchanged = await getEntry(alice, created.id);
+    expect(unchanged?.title).toBe("encrypted-title");
+    expect(unchanged?.body).toBe("encrypted-body");
+    expect(unchanged?.revision).toBe(1);
+  });
+
+  it("generic delete refuses daily-journal entries", async () => {
+    const created = await createJournalEntry(alice, {
+      journalDate: "2026-09-04",
+      title: "encrypted-title",
+      body: "encrypted-body",
+    });
+
+    expect(await deleteEntry(alice, created.id)).toBe(false);
+    expect(await getEntry(alice, created.id)).not.toBeNull();
   });
 
   it("update bumps updated_at past created_at", async () => {

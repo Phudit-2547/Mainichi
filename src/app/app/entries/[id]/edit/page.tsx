@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { updateEntryAction } from "@/lib/entries/actions";
 import { getEntry } from "@/lib/entries/dal";
@@ -11,6 +11,7 @@ export default async function EditEntryPage({ params }: Props) {
   const user = await getCurrentUser();
   const entry = await getEntry(user.id, id);
   if (!entry) notFound();
+  if (entry.journalDate) redirect(`/app/journal/${entry.journalDate}`);
 
   const action = updateEntryAction.bind(null, entry.id);
 

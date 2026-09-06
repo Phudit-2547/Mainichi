@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getEntry } from "@/lib/entries/dal";
 import { EntryDetail } from "../_components/entry-detail";
@@ -10,6 +10,7 @@ export default async function EntryDetailPage({ params }: Props) {
   const user = await getCurrentUser();
   const entry = await getEntry(user.id, id);
   if (!entry) notFound();
+  if (entry.journalDate) redirect(`/app/journal/${entry.journalDate}`);
 
   return <EntryDetail entry={entry} />;
 }
